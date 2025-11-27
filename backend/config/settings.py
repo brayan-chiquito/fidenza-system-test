@@ -145,6 +145,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom User Model
+# https://docs.djangoproject.com/en/5.2/topics/auth/customizing/#using-a-custom-user-model
+
+AUTH_USER_MODEL = 'authentication.User'
+
 
 # Django REST Framework Configuration
 # https://www.django-rest-framework.org/api-guide/settings/
