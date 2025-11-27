@@ -79,7 +79,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         
         user = User.objects.create_user(
-            username=validated_data['email'],
             email=validated_data['email'],
             password=password,
             first_name=validated_data['first_name'],
@@ -108,9 +107,8 @@ class UserLoginSerializer(TokenObtainPairSerializer):
         Valida las credenciales del usuario y genera los tokens JWT.
         Retorna los tokens junto con información básica del usuario.
         """
-        if 'email' in attrs:
-            attrs['username'] = attrs.pop('email')
-        
+        # El serializer padre usa username_field='email' para buscar el campo
+        # No necesitamos mapear, solo asegurarnos de que 'email' esté presente
         data = super().validate(attrs)
         
         data['user'] = {
