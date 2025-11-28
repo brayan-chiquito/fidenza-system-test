@@ -26,12 +26,13 @@ RUN chmod +x entrypoint.sh
 # Crear directorio para archivos estáticos
 RUN mkdir -p /app/staticfiles
 
-# Exponer puerto
+# Exponer puerto (Railway usa variable PORT, local usa 8000)
 EXPOSE 8000
 
 # Entrypoint para ejecutar migraciones y collectstatic antes de iniciar
 ENTRYPOINT ["./entrypoint.sh"]
 
 # Comando para ejecutar la aplicación
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# Railway proporciona PORT como variable de entorno, local usa 8000 por defecto
+CMD sh -c "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3"
 
