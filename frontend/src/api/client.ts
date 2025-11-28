@@ -13,28 +13,7 @@ import type { ApiError } from '@/types/api'
 // Obtener base URL de la API desde variables de entorno
 const getApiBaseURL = (): string => {
   const envUrl = import.meta.env.VITE_API_BASE_URL
-  const finalUrl = envUrl || 'http://localhost:8000'
-  
-  // Log siempre para debug (también en producción)
-  console.log('🔧 API Base URL configurada:', finalUrl)
-  
-  // Validar que la URL esté configurada en producción
-  if (import.meta.env.PROD && !envUrl) {
-    console.error('❌ VITE_API_BASE_URL no está configurada en producción!')
-    console.error('❌ Usando valor por defecto (localhost) que NO funcionará en producción!')
-  }
-  
-  // Validar formato de URL
-  if (envUrl) {
-    if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
-      console.error('❌ VITE_API_BASE_URL debe incluir el protocolo (http:// o https://)')
-    }
-    if (envUrl.endsWith('/')) {
-      console.warn('⚠️ VITE_API_BASE_URL no debería terminar en "/" (se añadirá automáticamente)')
-    }
-  }
-  
-  return finalUrl
+  return envUrl || 'http://localhost:8000'
 }
 
 // Crear instancia de Axios
@@ -86,23 +65,6 @@ apiClient.interceptors.response.use(
     return response
   },
   async (error: AxiosError<ApiError>) => {
-    // Log detallado de errores para debug (siempre)
-    const errorDetails = {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      baseURL: error.config?.baseURL || apiClient.defaults.baseURL,
-      fullURL: error.config ? `${error.config.baseURL || apiClient.defaults.baseURL}${error.config.url}` : 'unknown',
-      code: error.code,
-      apiBaseURLEnv: import.meta.env.VITE_API_BASE_URL || 'NO CONFIGURADA',
-    }
-    
-    // Loggear errores importantes siempre
-    if (!error.response || error.response.status >= 500 || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-      console.error('🔴 Error de API:', errorDetails)
-    }
-    
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
     // No intentar renovar token en endpoints de autenticación (login, register)

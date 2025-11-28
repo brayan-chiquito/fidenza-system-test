@@ -78,15 +78,6 @@ export function getErrorMessage(error: unknown): string {
     }
 
     if (message.includes('Network Error') || message.includes('timeout')) {
-      // Log detallado siempre para debug
-      console.error('🔴 Network Error detallado:', {
-        message: error.message,
-        apiBaseURL: import.meta.env.VITE_API_BASE_URL || 'NO CONFIGURADA',
-        environment: import.meta.env.MODE,
-      })
-      if (import.meta.env.DEV) {
-        console.error('Stack:', error.stack)
-      }
       return 'Error de conexión. Por favor, verifica tu conexión a internet y que el backend esté disponible.'
     }
     
