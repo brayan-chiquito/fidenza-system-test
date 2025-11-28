@@ -48,7 +48,7 @@
 **RNF-03: Mantenibilidad**
 - El código debe seguir principios SOLID y clean code.
 - El código debe estar documentado y ser fácil de entender.
-- El sistema debe tener cobertura de tests superior al 70%.
+- El sistema debe tener cobertura de tests superior al 70% (actualmente: 91%).
 
 **RNF-04: Seguridad**
 - El sistema debe utilizar HTTPS en producción.
@@ -251,6 +251,13 @@ Todos los endpoints de tareas requieren autenticación JWT mediante header `Auth
 **CORS:** django-cors-headers
 - Permite comunicación entre frontend y backend en diferentes orígenes
 - Configurado para desarrollo local (localhost:5173, localhost:3000)
+- Configurado para producción mediante variable de entorno `CORS_ALLOWED_ORIGINS`
+
+**Containerización:** Docker y Docker Compose
+- Dockerfile optimizado para producción con Python 3.11-slim
+- Docker Compose para desarrollo local con PostgreSQL
+- Entrypoint script para automatizar migraciones y collectstatic
+- Gunicorn como servidor WSGI para producción (3 workers)
 
 ### 1.2 Arquitectura de Aplicaciones
 
@@ -543,6 +550,8 @@ Realiza borrado lógico de la tarea (is_deleted=True). La tarea no se elimina f�
 
 ## 7. Configuración de Desarrollo
 
+### 7.1 Desarrollo Local (Sin Docker)
+
 **Iniciar servidor:**
 ```bash
 cd backend
@@ -565,19 +574,245 @@ coverage html
 - Email: `superuser@gmail.com`
 - Password: `159753brayan`
 
+### 7.2 Desarrollo con Docker
+
+**Requisitos previos:**
+- Docker y Docker Compose instalados
+- Archivo `.env` configurado en `backend/` (ver sección 7.3)
+
+**Iniciar servicios (backend + PostgreSQL):**
+```bash
+cd backend
+docker-compose up --build
+```
+
+**Ejecutar comandos dentro del contenedor:**
+```bash
+# Crear superusuario
+docker-compose exec web python manage.py createsuperuser
+
+# Ejecutar migraciones
+docker-compose exec web python manage.py migrate
+
+# Ejecutar tests
+docker-compose exec web python manage.py test
+```
+
+**Detener servicios:**
+```bash
+docker-compose down
+```
+
+**Detener y eliminar volúmenes (incluye base de datos):**
+```bash
+docker-compose down -v
+```
+
+### 7.3 Variables de Entorno
+
+Crear archivo `.env` en `backend/` con las siguientes variables:
+
+**Para desarrollo local (sin Docker):**
+```env
+SECRET_KEY=tu-secret-key-aqui
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+```
+
+**Para desarrollo con Docker:**
+```env
+SECRET_KEY=tu-secret-key-aqui
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=postgresql://postgres:postgres@db:5432/fidenza_db
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+```
+
+**Nota:** `DATABASE_URL` en Docker Compose se configura automáticamente, pero puede sobrescribirse en `.env`.
+
 ---
 
-## 8. Panel de Administración
+## 8. Dockerización del Backend
 
-**URL:** `http://localhost:8000/admin/`
+### 8.1 Estructura de Docker
+
+**Dockerfile:**
+- Imagen base: `python:3.11-slim`
+- Instala dependencias del sistema (PostgreSQL client)
+- Copia `requirements.txt` e instala dependencias de Python
+- Copia el código del proyecto
+- Configura entrypoint para ejecutar migraciones y collectstatic
+- Expone puerto 8000 (o variable `PORT` en producción)
+- Ejecuta Gunicorn con 3 workers
+
+**Entrypoint (`entrypoint.sh`):**
+- Ejecuta migraciones automáticamente (`python manage.py migrate --noinput`)
+- Recopila archivos estáticos (`python manage.py collectstatic --noinput`)
+- Lee variable `PORT` de entorno (default: 8000)
+- Inicia Gunicorn con el puerto configurado
+
+**Docker Compose (`docker-compose.yml`):**
+- Servicio `db`: PostgreSQL 14 con healthcheck
+- Servicio `web`: Backend Django con volumen montado para desarrollo
+- Volumen persistente para datos de PostgreSQL
+- Configuración de red interna entre servicios
+
+### 8.2 Ventajas de la Dockerización
+
+- **Consistencia:** Mismo entorno en desarrollo y producción
+- **Aislamiento:** Dependencias aisladas del sistema host
+- **Portabilidad:** Funciona en cualquier sistema con Docker
+- **Escalabilidad:** Fácil escalar servicios independientemente
+- **Reproducibilidad:** Mismo comportamiento en todos los entornos
+
+### 8.3 Optimizaciones para Producción
+
+- Imagen base ligera (`python:3.11-slim`)
+- Cache de capas de Docker para builds más rápidos
+- `.dockerignore` para excluir archivos innecesarios
+- Gunicorn con múltiples workers para mejor rendimiento
+- Variables de entorno para configuración flexible
+
+---
+
+## 9. Deployment en Railway
+
+### 9.1 Configuración Inicial
+
+**Requisitos:**
+- Cuenta en Railway
+- Repositorio Git (GitHub, GitLab, etc.)
+- Proyecto con Dockerfile configurado
+
+**Pasos para desplegar:**
+
+1. **Conectar repositorio:**
+   - Iniciar sesión en Railway
+   - Crear nuevo proyecto
+   - Conectar repositorio Git
+
+2. **Configurar servicio:**
+   - Railway detectará automáticamente el Dockerfile
+   - Si el proyecto es monorepo, configurar "Root Directory" a `backend`
+   - O usar `railway.json` para especificar configuración
+
+3. **Agregar base de datos PostgreSQL:**
+   - En Railway, agregar servicio PostgreSQL
+   - Railway generará automáticamente `DATABASE_URL`
+   - Esta variable se inyecta automáticamente al servicio web
+
+### 9.2 Variables de Entorno en Railway
+
+Configurar las siguientes variables en Railway (Settings → Variables):
+
+**Obligatorias:**
+```env
+SECRET_KEY=tu-secret-key-seguro-aqui
+DEBUG=False
+ALLOWED_HOSTS=tu-dominio.up.railway.app,*.up.railway.app
+CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
+```
+
+**Opcionales (con valores por defecto):**
+```env
+PORT=8000  # Railway lo proporciona automáticamente
+DATABASE_URL=postgresql://...  # Railway lo proporciona automáticamente
+```
+
+**Notas importantes:**
+- `DATABASE_URL` se configura automáticamente al agregar PostgreSQL
+- `PORT` es proporcionado por Railway automáticamente
+- `ALLOWED_HOSTS` debe incluir el dominio de Railway (`*.up.railway.app`)
+- `CORS_ALLOWED_ORIGINS` debe incluir la URL del frontend en producción
+
+### 9.3 Configuración de `railway.json`
+
+Archivo en la raíz del proyecto para configurar Railway:
+
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
+```
+
+**Para monorepo:**
+- Si el Dockerfile está en `backend/Dockerfile`, configurar:
+  - "Root Directory" en Railway UI: `backend`
+  - O `dockerfilePath: "backend/Dockerfile"` en `railway.json`
+
+### 9.4 Proceso de Deployment
+
+1. **Build:**
+   - Railway construye la imagen Docker
+   - Instala dependencias de Python
+   - Copia código del proyecto
+
+2. **Deploy:**
+   - Ejecuta `entrypoint.sh`
+   - Ejecuta migraciones automáticamente
+   - Recopila archivos estáticos
+   - Inicia Gunicorn en el puerto proporcionado
+
+3. **Health Check:**
+   - Railway verifica que el servicio responda
+   - Si falla, reintenta según `restartPolicyMaxRetries`
+
+### 9.5 Verificación Post-Deployment
+
+**Verificar que el servicio está corriendo:**
+- Revisar logs en Railway Dashboard
+- Verificar que no hay errores de migración
+- Confirmar que Gunicorn está escuchando en el puerto correcto
+
+**Probar endpoints:**
+- `https://tu-dominio.up.railway.app/api/auth/register/` (debe mostrar interfaz DRF)
+- Verificar que CORS está configurado correctamente
+- Probar login y registro desde el frontend
+
+### 9.6 Troubleshooting Común
+
+**Error: "No changes detected" en migraciones:**
+- Verificar que los modelos están correctamente definidos
+- Ejecutar `makemigrations` localmente y commitear
+
+**Error: "Port not valid":**
+- Verificar que `entrypoint.sh` lee `PORT` correctamente
+- Revisar que Gunicorn usa `${PORT:-8000}`
+
+**Error de CORS:**
+- Verificar que `CORS_ALLOWED_ORIGINS` incluye el dominio del frontend
+- Asegurarse de que no hay espacios en la variable de entorno
+
+**Error de base de datos:**
+- Verificar que `DATABASE_URL` está configurado
+- Confirmar que PostgreSQL está corriendo y accesible
+
+---
+
+## 10. Panel de Administración
+
+**URL local:** `http://localhost:8000/admin/`
+**URL producción:** `https://tu-dominio.up.railway.app/admin/`
 
 Permite gestión de usuarios y tareas desde interfaz web de Django. Útil para administración y debugging.
+
+**Nota:** En producción, asegúrate de tener un superusuario creado para acceder al panel.
 
 ---
 
 # Documentación Técnica - Frontend TaskFlow
 
-## 9. Justificación del Diseño y Arquitectura
+## 11. Justificación del Diseño y Arquitectura
 
 ### 1.1 Stack Tecnológico
 
@@ -668,7 +903,7 @@ frontend/
 - Watchers para efectos secundarios
 - Props y emits tipados
 
-## 10. Estructura del Proyecto
+## 12. Estructura del Proyecto
 
 ### 2.1 Capa de API (`src/api/`)
 
@@ -795,7 +1030,7 @@ frontend/
 - Drawer para detalles de tarea
 - Búsqueda y filtrado
 
-## 11. Decisiones de Diseño Importantes
+## 13. Decisiones de Diseño Importantes
 
 ### 3.1 Almacenamiento de Tokens en localStorage
 
@@ -892,7 +1127,7 @@ frontend/
 - Menos requests fallidos al servidor
 - Validación en frontend y backend (defensa en profundidad)
 
-## 12. Flujos Principales
+## 14. Flujos Principales
 
 ### 4.1 Flujo de Autenticación
 
@@ -948,7 +1183,7 @@ frontend/
    - Store elimina en backend (soft delete)
    - Tarea desaparece de la lista
 
-## 13. Seguridad
+## 15. Seguridad
 
 ### 5.1 Autenticación JWT
 
@@ -975,7 +1210,7 @@ frontend/
 - Headers apropiados configurados
 - No se envían credenciales sensibles en URLs
 
-## 14. Optimizaciones
+## 16. Optimizaciones
 
 ### 6.1 Code Splitting
 
@@ -1001,7 +1236,7 @@ frontend/
 - Favicon optimizado
 - Material Symbols como fuente (no imágenes)
 
-## 15. Guía de Desarrollo
+## 17. Guía de Desarrollo
 
 ### 7.1 Requisitos Previos
 
@@ -1018,11 +1253,27 @@ npm install
 
 ### 7.3 Variables de Entorno
 
-Crear archivo `.env.local`:
+**Para desarrollo local:**
+
+Crear archivo `.env.local` en el directorio `frontend/`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
+
+**Nota:** El proyecto incluye `.env.example` como referencia. Las variables de entorno deben empezar con `VITE_` para que Vite las exponga al código del frontend.
+
+**Para producción (Vercel):**
+
+Configurar en Vercel Dashboard → Settings → Environment Variables:
+- **Nombre:** `VITE_API_BASE_URL`
+- **Valor:** URL del backend en producción (ej: `https://fidenza-system-test-production.up.railway.app`)
+- **Environment:** Production (y Preview/Development si aplica)
+
+**⚠️ Importante:**
+- Las variables deben incluir el protocolo (`https://` en producción)
+- No deben terminar en barra final (`/`)
+- Vercel necesita redesplegar para aplicar nuevas variables de entorno
 
 ### 7.4 Scripts Disponibles
 
@@ -1030,8 +1281,11 @@ VITE_API_BASE_URL=http://localhost:8000
 # Desarrollo (con HMR)
 npm run dev
 
-# Build para producción
+# Build para producción (con type-check)
 npm run build
+
+# Build para producción (sin type-check, más rápido para CI/CD)
+npm run build:production
 
 # Preview de build de producción
 npm run preview
@@ -1049,25 +1303,33 @@ npm run format
 npm run test:unit
 ```
 
+**Nota:** El script `build:production` está optimizado para deployments en Vercel y omite el type-check para builds más rápidos. Úsalo solo en CI/CD; para builds locales, usa `npm run build` para verificar tipos.
+
 ### 7.5 Estructura de Archivos
 
 ```
-src/
-├── api/              # Servicios de API
-│   ├── auth.ts      # Endpoints de autenticación
-│   ├── client.ts    # Cliente Axios configurado
-│   └── tasks.ts     # Endpoints de tareas
-├── components/       # Componentes Vue
-│   └── ui/          # Componentes de UI reutilizables
-├── composables/     # Lógica reutilizable (hooks)
-├── router/          # Configuración de rutas
-├── stores/          # Stores de Pinia
-├── types/           # Tipos TypeScript
-├── utils/           # Utilidades
-├── views/           # Vistas/páginas
-├── styles/          # Estilos globales
-├── App.vue          # Componente raíz
-└── main.ts          # Punto de entrada
+frontend/
+├── src/
+│   ├── api/              # Servicios de API
+│   │   ├── auth.ts      # Endpoints de autenticación
+│   │   ├── client.ts    # Cliente Axios configurado
+│   │   └── tasks.ts     # Endpoints de tareas
+│   ├── components/       # Componentes Vue
+│   │   └── ui/          # Componentes de UI reutilizables
+│   ├── composables/     # Lógica reutilizable (hooks)
+│   ├── router/          # Configuración de rutas
+│   ├── stores/          # Stores de Pinia
+│   ├── types/           # Tipos TypeScript
+│   ├── utils/           # Utilidades
+│   ├── views/           # Vistas/páginas
+│   ├── styles/          # Estilos globales
+│   ├── App.vue          # Componente raíz
+│   └── main.ts          # Punto de entrada
+├── vercel.json          # Configuración de deployment en Vercel
+├── .env.example         # Ejemplo de variables de entorno
+├── vite.config.ts       # Configuración de Vite
+├── package.json         # Dependencias y scripts
+└── tsconfig.json        # Configuración de TypeScript
 ```
 
 ### 7.6 Convenciones de Código
@@ -1096,7 +1358,7 @@ src/
    - Crear en `src/components/ui/` o subdirectorio apropiado
    - Documentar props y emits
 
-## 16. Testing
+## 18. Testing
 
 ### 8.1 Configuración
 
@@ -1116,13 +1378,21 @@ npm run test:unit
 - Archivos `.spec.ts` o `.test.ts`
 - Ejemplo: `src/__tests__/App.spec.ts`
 
-## 17. Build y Deployment
+## 19. Build y Deployment
 
 ### 9.1 Build de Producción
 
+**Para desarrollo local:**
 ```bash
 npm run build
 ```
+Este comando ejecuta type-check antes del build para asegurar que no hay errores de TypeScript.
+
+**Para deployment en Vercel:**
+```bash
+npm run build:production
+```
+Este comando ejecuta solo `vite build` sin type-check, optimizando el tiempo de build en CI/CD.
 
 Genera carpeta `dist/` con:
 - Código minificado y optimizado
@@ -1141,16 +1411,109 @@ Sirve el build de producción localmente para pruebas.
 ### 9.3 Deployment
 
 El frontend puede desplegarse en:
-- **Vercel**: Deployment automático desde Git
+- **Vercel**: Deployment automático desde Git (configurado actualmente)
 - **Netlify**: Similar a Vercel
 - **GitHub Pages**: Para proyectos estáticos
 - **Servidor propio**: Servir carpeta `dist/` con nginx/apache
 
-**Configuración necesaria:**
-- Variable de entorno `VITE_API_BASE_URL` apuntando al backend
-- Configurar CORS en backend para el dominio de producción
+#### 9.3.1 Deployment en Vercel
 
-## 18. Troubleshooting
+**Configuración implementada:**
+
+El proyecto incluye `vercel.json` en la raíz del directorio `frontend/` con la siguiente configuración:
+
+```json
+{
+  "buildCommand": "npm run build:production",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+**Características importantes:**
+
+1. **Script de build optimizado**: Se usa `build:production` que ejecuta solo `vite build` (sin type-check) para deployments más rápidos en Vercel.
+   - Script definido en `package.json`: `"build:production": "vite build"`
+
+2. **SPA Routing**: Los `rewrites` configuran Vercel para redirigir todas las rutas a `index.html`, permitiendo que Vue Router maneje el routing del lado del cliente.
+
+3. **DevTools deshabilitados en producción**: `vite-plugin-vue-devtools` está configurado para ejecutarse solo en desarrollo:
+   ```typescript
+   vueDevTools({
+     enabled: process.env.NODE_ENV !== 'production',
+   })
+   ```
+
+**Pasos para desplegar en Vercel:**
+
+1. **Conectar repositorio:**
+   - Iniciar sesión en [Vercel](https://vercel.com)
+   - Crear nuevo proyecto
+   - Conectar repositorio Git (GitHub, GitLab, etc.)
+   - Si el proyecto está en un monorepo, configurar "Root Directory" a `frontend`
+
+2. **Configurar variables de entorno:**
+   - En Vercel Dashboard → Settings → Environment Variables
+   - Agregar variable:
+     - **Nombre:** `VITE_API_BASE_URL`
+     - **Valor:** URL del backend en producción (ej: `https://fidenza-system-test-production.up.railway.app`)
+     - **Environment:** Production, Preview, Development (según corresponda)
+
+3. **Configuración automática:**
+   - Vercel detectará automáticamente el framework (Vite) desde `vercel.json`
+   - Usará el `buildCommand` y `outputDirectory` especificados
+   - Configurará automáticamente los rewrites para SPA routing
+
+4. **Deployment:**
+   - Vercel desplegará automáticamente en cada push a la rama principal
+   - Cada deployment genera una URL única para preview
+   - El dominio de producción se configura en Settings → Domains
+
+**Pasos para conectar Frontend (Vercel) con Backend (Railway):**
+
+1. **En Railway (Backend):**
+   - Ve a Railway → Tu proyecto → Backend service → Variables
+   - Agregar o editar variable `CORS_ALLOWED_ORIGINS`
+   - Valor: El dominio exacto de Vercel (ej: `https://fidenza-system-test-frontend.vercel.app`)
+   - ⚠️ **Importante:** Debe incluir `https://`, sin barra final, sin espacios
+   - Si tienes múltiples dominios, separarlos por comas: `https://frontend.vercel.app,http://localhost:5173`
+   - **Redesplegar el backend** después de cambiar la variable (Railway → Deployments → Redeploy)
+
+2. **En Vercel (Frontend):**
+   - Ve a Vercel Dashboard → Tu proyecto → Settings → Environment Variables
+   - Agregar variable:
+     - **Nombre:** `VITE_API_BASE_URL`
+     - **Valor:** URL del backend en Railway (ej: `https://fidenza-system-test-production.up.railway.app`)
+     - **Environment:** Production (y Preview/Development si aplica)
+   - ⚠️ **Importante:** Debe incluir `https://`, sin barra final
+
+3. **Redeploy ambos servicios:**
+   - **Railway:** Ve a Deployments → tres puntos (`...`) → Redeploy (obligatorio después de cambiar variables)
+   - **Vercel:** Redesplegar automáticamente después del push o manualmente desde Dashboard
+
+**Verificación post-deployment:**
+
+1. Verificar que el frontend carga correctamente
+2. Abrir DevTools (F12) → Console
+3. Debe mostrarse la URL del backend configurada
+4. Probar login/registro para verificar que la comunicación con el backend funciona
+5. Verificar que el routing funciona (navegar entre páginas y recargar)
+
+**Troubleshooting común:**
+
+- **Error 404 en rutas:** Verificar que `vercel.json` tiene los `rewrites` configurados
+- **Error de conexión:** Verificar que `VITE_API_BASE_URL` está configurada en Vercel y que el backend tiene `CORS_ALLOWED_ORIGINS` con el dominio de Vercel
+- **Error de build:** Verificar que el script `build:production` existe y funciona localmente
+- **TypeScript errors en build:** El script `build:production` omite type-check para deployments más rápidos; usar `npm run build` localmente para verificar tipos
+
+## 20. Troubleshooting
 
 ### 10.1 Error: "Cannot find module '@/...'"
 
@@ -1160,7 +1523,11 @@ El frontend puede desplegarse en:
 ### 10.2 Error de CORS
 
 - Verificar que backend tiene configurado CORS para el origen del frontend
-- Verificar variable de entorno `VITE_API_BASE_URL`
+  - En Railway: Variable `CORS_ALLOWED_ORIGINS` debe contener el dominio exacto de Vercel
+  - Formato: `https://tu-frontend.vercel.app` (con `https://`, sin barra final, sin espacios)
+- Verificar variable de entorno `VITE_API_BASE_URL` en Vercel
+- **Importante:** Después de cambiar `CORS_ALLOWED_ORIGINS` en Railway, es obligatorio redesplegar el backend
+- Verificar en Network tab del navegador que las solicitudes OPTIONS (preflight) retornan el header `Access-Control-Allow-Origin` con el dominio correcto
 
 ### 10.3 Tokens no persisten después de recargar
 
@@ -1172,7 +1539,7 @@ El frontend puede desplegarse en:
 - Verificar que `main.css` importa las directivas de Tailwind
 - Verificar que `tailwind.config.js` tiene los paths correctos en `content`
 
-## 19. Mejoras Futuras
+## 21. Mejoras Futuras
 
 ### 11.1 Funcionalidades
 
@@ -1205,7 +1572,7 @@ El frontend puede desplegarse en:
 - [ ] Tests de componentes con Vue Test Utils
 - [ ] Tests de integración de stores
 
-## 20. Referencias
+## 22. Referencias
 
 - [Vue 3 Documentation](https://vuejs.org/)
 - [Vite Documentation](https://vite.dev/)
