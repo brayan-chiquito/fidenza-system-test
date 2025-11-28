@@ -10,5 +10,10 @@ python manage.py collectstatic --noinput
 
 # Ejecutar el servidor
 echo "Iniciando servidor..."
-exec "$@"
+# Obtener PORT de variables de entorno o usar 8000 por defecto
+PORT=${PORT:-8000}
+echo "Usando puerto: $PORT"
+
+# Siempre usar gunicorn con PORT (ignorar CMD si existe)
+exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 3
 

@@ -31,6 +31,6 @@ EXPOSE 8000
 # Entrypoint para ejecutar migraciones y collectstatic
 ENTRYPOINT ["./entrypoint.sh"]
 
-# Comando para ejecutar la aplicación
-CMD sh -c "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3"
+# El entrypoint manejará el inicio si no se pasa comando
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
 
