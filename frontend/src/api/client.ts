@@ -61,8 +61,12 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-    // Si el error es 401 y no hemos intentado renovar el token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // No intentar renovar token en endpoints de autenticación (login, register)
+    const isAuthEndpoint = originalRequest.url?.includes('/api/auth/login/') || 
+                          originalRequest.url?.includes('/api/auth/register/')
+
+    // Si el error es 401 y no hemos intentado renovar el token (y no es endpoint de auth)
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // Si ya estamos renovando, agregar request a la cola
         return new Promise((resolve, reject) => {

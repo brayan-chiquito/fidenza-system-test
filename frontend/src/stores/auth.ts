@@ -2,6 +2,7 @@ import { ref, computed, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import { login as apiLogin, register as apiRegister, refreshToken as apiRefreshToken } from '@/api/auth'
 import { tokenUtils } from '@/utils/token'
+import { getErrorMessage } from '@/utils/errorHandler'
 import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
 
 /**
@@ -47,8 +48,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.user
       tokenUtils.setUser(response.user)
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
-      error.value = errorMessage
+      // Convertir error técnico a mensaje amigable
+      error.value = getErrorMessage(err)
       throw err
     } finally {
       loading.value = false
@@ -72,8 +73,8 @@ export const useAuthStore = defineStore('auth', () => {
         password: userData.password,
       })
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al registrar usuario'
-      error.value = errorMessage
+      // Convertir error técnico a mensaje amigable
+      error.value = getErrorMessage(err)
       throw err
     } finally {
       loading.value = false
