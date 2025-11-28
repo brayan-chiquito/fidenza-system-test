@@ -332,10 +332,17 @@ Todos los endpoints de tareas requieren autenticación JWT mediante header `Auth
 
 ## 4. Detalles de Endpoints de la API
 
+**Nota sobre URLs:** Todos los ejemplos usan `https://tu-dominio.railway.app` como base. Reemplaza con tu dominio real:
+- Dominio Railway por defecto: `https://tu-proyecto-production.up.railway.app`
+- Dominio Railway corto: `https://tu-proyecto.railway.app`
+- Dominio personalizado: `https://api.tudominio.com`
+
 ### 2.1 Autenticación
 
 #### POST /api/auth/register/
 Registro de nuevos usuarios. Valida email único, contraseña mínima de 8 caracteres y campos requeridos.
+
+**URL completa:** `https://tu-dominio.railway.app/api/auth/register/`
 
 **Request:**
 ```json
@@ -364,6 +371,8 @@ Registro de nuevos usuarios. Valida email único, contraseña mínima de 8 carac
 #### POST /api/auth/login/
 Autenticación de usuarios. Retorna tokens JWT (access y refresh) e información del usuario.
 
+**URL completa:** `https://tu-dominio.railway.app/api/auth/login/`
+
 **Request:**
 ```json
 {
@@ -390,6 +399,8 @@ Autenticación de usuarios. Retorna tokens JWT (access y refresh) e información
 #### POST /api/auth/refresh/
 Renovación de access token usando refresh token. Retorna nuevo access token y nuevo refresh token (rotación).
 
+**URL completa:** `https://tu-dominio.railway.app/api/auth/refresh/`
+
 **Request:**
 ```json
 {
@@ -412,6 +423,13 @@ Todos los endpoints de tareas requieren autenticación JWT mediante header `Auth
 #### GET /api/tasks/
 Lista todas las tareas del usuario autenticado. Excluye tareas eliminadas (is_deleted=True). Respuesta paginada.
 
+**URL completa:** `https://tu-dominio.railway.app/api/tasks/`
+
+**Headers requeridos:**
+```
+Authorization: Bearer <access_token>
+```
+
 **Response (200):**
 ```json
 {
@@ -433,6 +451,14 @@ Lista todas las tareas del usuario autenticado. Excluye tareas eliminadas (is_de
 
 #### POST /api/tasks/
 Crea una nueva tarea. El campo `user` se asigna automáticamente desde el token JWT.
+
+**URL completa:** `https://tu-dominio.railway.app/api/tasks/`
+
+**Headers requeridos:**
+```
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
 
 **Request:**
 ```json
@@ -779,7 +805,287 @@ Archivo en la raíz del proyecto para configurar Railway:
 - Verificar que CORS está configurado correctamente
 - Probar login y registro desde el frontend
 
-### 9.6 Troubleshooting Común
+### 9.6 Dominio Personalizado y Llamadas a la API
+
+#### 9.6.1 Usar el Dominio de Railway (Por Defecto)
+
+Railway proporciona automáticamente un dominio con el formato:
+```
+https://tu-proyecto-production.up.railway.app
+```
+
+**Ejemplo de llamadas a la API:**
+
+```bash
+# Registro de usuario
+POST https://fidenza-system-test-production.up.railway.app/api/auth/register/
+
+# Login
+POST https://fidenza-system-test-production.up.railway.app/api/auth/login/
+
+# Listar tareas (requiere autenticación)
+GET https://fidenza-system-test-production.up.railway.app/api/tasks/
+Authorization: Bearer <access_token>
+```
+
+**En el frontend (variable de entorno):**
+```env
+VITE_API_BASE_URL=https://fidenza-system-test-production.up.railway.app
+```
+
+#### 9.6.2 Configurar Tu Propio Dominio Personalizado
+
+Railway permite usar tu propio dominio registrado (no el generado por Railway). Esto es útil si ya tienes un dominio propio y quieres usarlo para la API.
+
+**Requisitos previos:**
+- Tener un dominio registrado (ej: `tudominio.com`, `midominio.net`)
+- Acceso al panel de control de tu proveedor DNS (donde compraste el dominio)
+- Saber cómo configurar registros DNS (CNAME o A)
+
+**Pasos para configurar tu dominio personalizado:**
+
+1. **En Railway Dashboard:**
+   - Ve a tu proyecto → Servicio del backend
+   - Click en la pestaña **"Settings"**
+   - Scroll hasta la sección **"Domains"** o **"Custom Domain"**
+   - Click en **"Add Custom Domain"** o **"Custom Domain"**
+
+2. **Ingresar tu dominio:**
+   - Ingresa el subdominio que quieres usar (ej: `api.tudominio.com` o `backend.tudominio.com`)
+   - **Recomendación:** Usa un subdominio como `api.` en lugar del dominio raíz
+   - Ejemplos válidos:
+     - `api.tudominio.com` ✅
+     - `backend.tudominio.com` ✅
+     - `api-fidenza.tudominio.com` ✅
+     - `tudominio.com` ⚠️ (posible pero no recomendado, mejor usar subdominio)
+
+3. **Railway te proporcionará información DNS:**
+   - Railway mostrará un registro **CNAME** o **A** que debes configurar
+   - Ejemplo de CNAME: `api.tudominio.com` → `tu-proyecto-production.up.railway.app`
+   - O un registro A con una IP específica
+
+4. **Configurar DNS en tu proveedor:**
+   
+   **Opción A: Usando CNAME (Recomendado)**
+   - Ve al panel de control de tu proveedor DNS (GoDaddy, Namecheap, Cloudflare, etc.)
+   - Busca la sección de "DNS Records" o "Zone Records"
+   - Agrega un nuevo registro:
+     - **Tipo:** CNAME
+     - **Nombre/Host:** `api` (o el subdominio que elegiste)
+     - **Valor/Target:** El dominio que Railway te proporcionó (ej: `tu-proyecto-production.up.railway.app`)
+     - **TTL:** 3600 (o el valor por defecto)
+
+   **Opción B: Usando registro A (si Railway lo requiere)**
+   - **Tipo:** A
+   - **Nombre/Host:** `api`
+   - **Valor/Target:** La IP que Railway te proporcionó
+   - **TTL:** 3600
+
+5. **Esperar propagación DNS:**
+   - Los cambios DNS pueden tardar desde minutos hasta 48 horas
+   - Normalmente toma entre 5-30 minutos
+   - Puedes verificar la propagación con herramientas como:
+     - `https://dnschecker.org`
+     - `nslookup api.tudominio.com` (en terminal)
+     - `dig api.tudominio.com` (en terminal)
+
+6. **Verificar en Railway:**
+   - Railway verificará automáticamente cuando el DNS esté configurado correctamente
+   - El estado cambiará de "Pending" a "Active" cuando esté listo
+   - Railway configurará automáticamente el certificado SSL/HTTPS
+
+**Ejemplo completo:**
+
+Supongamos que tienes el dominio `midominio.com` y quieres usar `api.midominio.com`:
+
+1. En Railway, agregas `api.midominio.com` como dominio personalizado
+2. Railway te dice: "Configura CNAME: `api.midominio.com` → `fidenza-system-test-production.up.railway.app`"
+3. Vas a tu proveedor DNS (ej: GoDaddy) y agregas:
+   ```
+   Tipo: CNAME
+   Nombre: api
+   Valor: fidenza-system-test-production.up.railway.app
+   ```
+4. Esperas 5-30 minutos
+5. Railway detecta el DNS y activa el dominio
+6. Ahora puedes usar: `https://api.midominio.com/api/auth/register/`
+
+**Nota sobre dominio Railway corto (opcional):**
+Si no tienes un dominio propio, Railway también puede generar un dominio más corto que el predeterminado:
+- Dominio predeterminado: `fidenza-system-test-production.up.railway.app`
+- Dominio Railway corto: `fidenza-api.railway.app` (más corto, pero sigue siendo de Railway)
+- Para esto, usa la opción "Generate Domain" en Railway (no requiere configuración DNS)
+
+**Ejemplo de dominio personalizado propio:**
+```
+# Antes (dominio largo de Railway)
+https://fidenza-system-test-production.up.railway.app
+
+# Después (tu dominio personalizado)
+https://api.tudominio.com
+# o
+https://backend.tudominio.com
+# o cualquier subdominio de tu dominio
+```
+
+**Nota:** Si no tienes un dominio propio, Railway puede generar uno más corto (`fidenza-api.railway.app`), pero sigue siendo de Railway. Para usar tu propio dominio, debes tenerlo registrado y configurar DNS.
+
+#### 9.6.3 Actualizar Variables de Entorno Después de Configurar Tu Dominio
+
+**⚠️ Importante:** Después de configurar tu dominio personalizado, debes actualizar las variables de entorno en ambos servicios.
+
+**1. En Railway (Backend):**
+
+Actualizar `ALLOWED_HOSTS` para incluir tu dominio personalizado:
+```env
+ALLOWED_HOSTS=api.tudominio.com,*.railway.app
+```
+
+**Explicación:**
+- `api.tudominio.com` → Tu dominio personalizado (reemplaza con el tuyo)
+- `*.railway.app` → Permite todos los subdominios de Railway (útil si también quieres usar el dominio de Railway)
+- Puedes agregar múltiples dominios separados por comas: `api.tudominio.com,backend.tudominio.com,*.railway.app`
+
+**Ejemplo real:**
+Si tu dominio es `midominio.com` y configuraste `api.midominio.com`:
+```env
+ALLOWED_HOSTS=api.midominio.com,*.railway.app
+```
+
+**2. En Vercel (Frontend):**
+
+Actualizar `VITE_API_BASE_URL` con tu dominio personalizado:
+```env
+VITE_API_BASE_URL=https://api.tudominio.com
+```
+
+**Ejemplo real:**
+Si tu dominio es `midominio.com` y configuraste `api.midominio.com`:
+```env
+VITE_API_BASE_URL=https://api.midominio.com
+```
+
+**⚠️ Importante:**
+- Debe incluir `https://` (Railway proporciona SSL automáticamente)
+- No debe terminar en barra final (`/`)
+- Debe ser exactamente el dominio que configuraste en Railway
+
+**3. Redesplegar ambos servicios:**
+- **Railway:** Automático o manual desde Deployments
+- **Vercel:** Automático después del push o manual
+
+#### 9.6.4 Ejemplos de Llamadas con Tu Dominio Personalizado
+
+**Con tu dominio personalizado (recomendado):**
+```bash
+# Registro
+POST https://api.tudominio.com/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "usuario@ejemplo.com",
+  "password": "password123",
+  "password_confirm": "password123",
+  "first_name": "Juan",
+  "last_name": "Pérez"
+}
+```
+
+**Ejemplo con dominio real:**
+Si tu dominio es `midominio.com` y configuraste `api.midominio.com`:
+```bash
+# Login
+POST https://api.midominio.com/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "usuario@ejemplo.com",
+  "password": "password123"
+}
+```
+
+**Con cURL usando tu dominio:**
+```bash
+# Crear tarea
+curl -X POST https://api.tudominio.com/api/tasks/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Mi nueva tarea",
+    "description": "Descripción de la tarea"
+  }'
+```
+
+**Ejemplo real con dominio `midominio.com`:**
+```bash
+curl -X GET https://api.midominio.com/api/tasks/ \
+  -H "Authorization: Bearer <access_token>"
+```
+
+**Con JavaScript/Fetch usando tu dominio:**
+```javascript
+// Usando fetch con tu dominio personalizado
+const API_BASE_URL = 'https://api.tudominio.com'; // Tu dominio
+
+const response = await fetch(`${API_BASE_URL}/api/tasks/`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const tasks = await response.json();
+```
+
+**Con Axios (como en el frontend) usando tu dominio:**
+```javascript
+import axios from 'axios';
+
+// Usar variable de entorno o tu dominio directamente
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.tudominio.com',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Agregar token automáticamente
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Usar la API
+const tasks = await api.get('/api/tasks/');
+```
+
+#### 9.6.5 Ventajas de Usar Tu Propio Dominio Personalizado
+
+- **Más profesional:** Usa tu propio dominio en lugar del de Railway
+- **Más fácil de recordar:** `api.tudominio.com` vs `fidenza-system-test-production.up.railway.app`
+- **Más corto en código:** Menos caracteres en variables de entorno y código
+- **Mejor branding:** Tu dominio, tu marca
+- **Mejor para documentación:** URLs más limpias y profesionales en documentación de API
+- **Flexibilidad:** Puedes cambiar de proveedor (Railway, Render, etc.) sin cambiar el dominio
+- **Control total:** Tú decides el nombre del subdominio (`api`, `backend`, `rest`, etc.)
+- **Confianza:** Los usuarios ven tu dominio, no el de Railway
+
+#### 9.6.6 Notas Importantes Sobre Tu Dominio Personalizado
+
+- **HTTPS automático:** Railway configura automáticamente SSL/HTTPS para tu dominio personalizado (gratis)
+- **Costo del dominio:** Necesitas tener tu propio dominio registrado (puede costar ~$10-15/año)
+- **Configuración DNS:** Debes tener acceso al panel DNS de tu proveedor de dominio
+- **Propagación DNS:** Los cambios pueden tardar desde minutos hasta 48 horas (normalmente 5-30 minutos)
+- **Certificado SSL:** Railway gestiona automáticamente los certificados SSL (Let's Encrypt)
+- **Renovación automática:** Railway renueva automáticamente los certificados SSL
+- **Múltiples dominios:** Puedes configurar varios subdominios (ej: `api.tudominio.com`, `backend.tudominio.com`)
+- **Verificación:** Railway verifica automáticamente cuando el DNS está configurado correctamente
+
+### 9.7 Troubleshooting Común
 
 **Error: "No changes detected" en migraciones:**
 - Verificar que los modelos están correctamente definidos
@@ -796,6 +1102,12 @@ Archivo en la raíz del proyecto para configurar Railway:
 **Error de base de datos:**
 - Verificar que `DATABASE_URL` está configurado
 - Confirmar que PostgreSQL está corriendo y accesible
+
+**Error después de cambiar dominio:**
+- Verificar que `ALLOWED_HOSTS` incluye el nuevo dominio
+- Verificar que `CORS_ALLOWED_ORIGINS` está actualizado si es necesario
+- Verificar que `VITE_API_BASE_URL` en Vercel está actualizado
+- Redesplegar ambos servicios después de cambiar dominios
 
 ---
 
