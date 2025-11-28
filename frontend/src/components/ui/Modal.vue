@@ -60,7 +60,7 @@ onUnmounted(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="isOpen" class="relative z-50">
+    <div v-if="isOpen" class="relative z-[60]">
       <!-- Backdrop -->
       <div
         class="modal-backdrop fixed inset-0 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm transition-opacity"

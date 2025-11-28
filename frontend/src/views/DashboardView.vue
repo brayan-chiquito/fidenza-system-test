@@ -168,6 +168,7 @@ function editFromDrawer(): void {
 function deleteFromDrawer(): void {
   if (viewingTask.value) {
     deletingTask.value = viewingTask.value
+    viewingTask.value = null // Cerrar el drawer, igual que al editar
   }
 }
 
@@ -407,7 +408,7 @@ const userName = computed(() => {
           <input
             v-model="newTaskForm.title"
             required
-            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-background-light dark:bg-gray-800 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 text-base font-normal leading-normal"
+            class="w-full h-12 px-4 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary"
             placeholder="Comprar entradas para el concierto"
           />
         </label>
@@ -453,7 +454,7 @@ const userName = computed(() => {
           <input
             v-model="editTaskForm.title"
             required
-            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-background-light dark:bg-gray-800 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 text-base font-normal leading-normal"
+            class="w-full h-12 px-4 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary"
           />
         </label>
         <label class="flex flex-col w-full">

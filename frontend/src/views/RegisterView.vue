@@ -26,7 +26,7 @@ const isSubmitting = ref(false)
  */
 const passwordStrength = computed(() => {
   const pass = password.value
-  if (!pass) return { level: 0, label: '', width: '0%' }
+  if (!pass) return { level: 0, label: '', width: '0%', color: 'bg-gray-500' }
 
   let strength = 0
   if (pass.length >= 8) strength++
@@ -35,16 +35,23 @@ const passwordStrength = computed(() => {
   if (/[0-9]/.test(pass)) strength++
   if (/[^a-zA-Z0-9]/.test(pass)) strength++
 
-  const labels = ['Muy débil', 'Débil', 'Regular', 'Fuerte', 'Muy fuerte']
-  const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500']
-  const widths = ['20%', '40%', '60%', '80%', '100%']
+  // Mapeo de strength (0-5) a niveles de fortaleza visual
+  // strength 0-1: Muy débil (20%)
+  // strength 2: Débil (40%)
+  // strength 3: Regular (60%)
+  // strength 4: Fuerte (100%)
+  // strength 5: Muy fuerte (100% verde)
+  const levels = [
+    { level: 0, label: 'Muy débil', width: '20%', color: 'bg-red-500' },
+    { level: 1, label: 'Muy débil', width: '20%', color: 'bg-red-500' },
+    { level: 2, label: 'Débil', width: '40%', color: 'bg-orange-500' },
+    { level: 3, label: 'Regular', width: '60%', color: 'bg-yellow-500' },
+    { level: 4, label: 'Fuerte', width: '100%', color: 'bg-blue-500' },
+    { level: 5, label: 'Muy fuerte', width: '100%', color: 'bg-green-500' },
+  ]
 
-  return {
-    level: strength,
-    label: labels[strength - 1] || '',
-    width: widths[strength - 1] || '0%',
-    color: colors[strength - 1] || 'bg-gray-500',
-  }
+  const normalizedStrength = Math.min(strength, 5)
+  return levels[normalizedStrength] || levels[0]
 })
 
 /**
@@ -143,7 +150,7 @@ async function handleSubmit(event: Event): Promise<void> {
       <!-- Registration Form -->
       <form @submit="handleSubmit" class="mt-8 flex flex-col gap-4">
         <!-- Name Fields -->
-        <div class="flex flex-col sm:flex-row items-end gap-4">
+        <div class="flex flex-col sm:flex-row gap-4">
           <label class="flex flex-col min-w-40 flex-1">
             <p
               class="text-gray-900 dark:text-white text-sm font-medium leading-normal pb-2"
@@ -153,7 +160,7 @@ async function handleSubmit(event: Event): Promise<void> {
             <input
               v-model="firstName"
               required
-              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary dark:focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal"
+              class="w-full h-12 px-4 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary disabled:opacity-50"
               placeholder="Ingresa tu nombre"
               :disabled="isSubmitting"
             />
@@ -167,7 +174,7 @@ async function handleSubmit(event: Event): Promise<void> {
             <input
               v-model="lastName"
               required
-              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary dark:focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal"
+              class="w-full h-12 px-4 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary disabled:opacity-50"
               placeholder="Ingresa tu apellido"
               :disabled="isSubmitting"
             />
@@ -183,7 +190,7 @@ async function handleSubmit(event: Event): Promise<void> {
             v-model="email"
             required
             type="email"
-            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary dark:focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal"
+            class="w-full h-12 px-4 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary disabled:opacity-50"
             placeholder="tu.email@ejemplo.com"
             :disabled="isSubmitting"
           />
@@ -199,7 +206,7 @@ async function handleSubmit(event: Event): Promise<void> {
               v-model="password"
               required
               :type="showPassword ? 'text' : 'password'"
-              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary dark:focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 pr-12 text-base font-normal leading-normal"
+              class="w-full h-12 px-4 pr-12 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary disabled:opacity-50"
               placeholder="Crea una contraseña segura"
               :disabled="isSubmitting"
             />
@@ -218,16 +225,14 @@ async function handleSubmit(event: Event): Promise<void> {
 
         <!-- Password Strength Indicator -->
         <div v-if="password" class="flex gap-2 items-center">
-          <div class="w-1/3 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full">
+          <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               :class="passwordStrength.color"
-              class="h-full rounded-full transition-all duration-300"
+              class="h-full rounded-full transition-all duration-300 ease-in-out"
               :style="{ width: passwordStrength.width }"
             ></div>
           </div>
-          <div class="w-1/3 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-          <div class="w-1/3 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 ml-1">{{ passwordStrength.label }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 ml-1 whitespace-nowrap">{{ passwordStrength.label }}</p>
         </div>
 
         <!-- Confirm Password Field -->
@@ -240,7 +245,7 @@ async function handleSubmit(event: Event): Promise<void> {
               v-model="passwordConfirm"
               required
               :type="showPasswordConfirm ? 'text' : 'password'"
-              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark focus:border-primary dark:focus:border-primary h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 pr-12 text-base font-normal leading-normal"
+              class="w-full h-12 px-4 pr-12 text-base font-normal leading-normal rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-background-dark text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:border-primary disabled:opacity-50"
               placeholder="Vuelve a escribir la contraseña"
               :disabled="isSubmitting"
             />
