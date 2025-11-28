@@ -35,8 +35,9 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Inicializar autenticación si hay tokens guardados
-  if (!authStore.isAuthenticated && authStore.accessToken === null) {
+  // Inicializar autenticación desde localStorage si no se ha hecho ya
+  // Solo si no hay token cargado en memoria pero sí hay en localStorage
+  if (!authStore.accessToken) {
     authStore.initializeAuth()
   }
 

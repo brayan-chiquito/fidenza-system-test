@@ -11,7 +11,6 @@ const tasksStore = useTasksStore()
 // Form data
 const email = ref('')
 const password = ref('')
-const rememberMe = ref(false)
 
 // UI state
 const showPassword = ref(false)
@@ -145,22 +144,6 @@ function togglePasswordVisibility(): void {
                 </button>
               </div>
             </label>
-
-            <!-- Remember me y Forgot password -->
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-x-2">
-                <input
-                  v-model="rememberMe"
-                  type="checkbox"
-                  class="h-4 w-4 rounded border-2 border-zinc-300 bg-transparent text-primary checked:border-primary checked:bg-primary checked:bg-[image:--checkbox-tick-svg] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 dark:border-zinc-600 dark:checked:border-primary"
-                  :disabled="isSubmitting"
-                />
-                <p class="text-sm font-normal text-zinc-600 dark:text-zinc-300">Recordarme</p>
-              </label>
-              <a href="#" class="text-sm font-medium text-primary hover:underline"
-                >¿Olvidaste tu contraseña?</a
-              >
-            </div>
 
             <!-- Submit button -->
             <button

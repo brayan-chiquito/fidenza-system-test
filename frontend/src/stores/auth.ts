@@ -45,6 +45,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Guardar usuario
       user.value = response.user
+      tokenUtils.setUser(response.user)
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
       error.value = errorMessage
@@ -122,12 +123,12 @@ export const useAuthStore = defineStore('auth', () => {
   function initializeAuth(): void {
     const storedAccessToken = tokenUtils.getAccessToken()
     const storedRefreshToken = tokenUtils.getRefreshToken()
+    const storedUser = tokenUtils.getUser()
 
-    if (storedAccessToken && storedRefreshToken) {
+    if (storedAccessToken && storedRefreshToken && storedUser) {
       accessToken.value = storedAccessToken
       refreshToken.value = storedRefreshToken
-      // Nota: El usuario se puede obtener del token JWT o hacer un request
-      // Por ahora, lo dejamos null y se actualizará al hacer una petición autenticada
+      user.value = storedUser
     }
   }
 

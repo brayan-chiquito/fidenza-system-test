@@ -2,8 +2,11 @@
  * Utilidades para manejo de tokens JWT en localStorage
  */
 
+import type { User } from '@/types/auth'
+
 const ACCESS_TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
+const USER_KEY = 'user'
 
 export const tokenUtils = {
   /**
@@ -35,11 +38,32 @@ export const tokenUtils = {
   },
 
   /**
-   * Elimina ambos tokens de localStorage
+   * Guarda el usuario en localStorage
+   */
+  setUser(user: User): void {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  },
+
+  /**
+   * Obtiene el usuario de localStorage
+   */
+  getUser(): User | null {
+    const userStr = localStorage.getItem(USER_KEY)
+    if (!userStr) return null
+    try {
+      return JSON.parse(userStr) as User
+    } catch {
+      return null
+    }
+  },
+
+  /**
+   * Elimina tokens y usuario de localStorage
    */
   clearTokens(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
   },
 
   /**
