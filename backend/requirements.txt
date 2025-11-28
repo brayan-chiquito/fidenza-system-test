@@ -16,6 +16,9 @@ dj-database-url==3.0.1
 # Variables de entorno
 python-decouple==3.8
 
+# Servidor WSGI para producción
+gunicorn==21.2.0
+
 # Testing
 coverage==7.12.0
 
