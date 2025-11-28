@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el proyecto
+# Copiar el proyecto (desde el contexto de backend/)
 COPY . .
 
 # Hacer ejecutable el entrypoint

@@ -16,9 +16,11 @@ Esta guía explica cómo desplegar el backend en Railway paso a paso.
 
 Asegúrate de que tu repositorio tenga:
 - ✅ `Dockerfile` en la carpeta `backend/`
-- ✅ `requirements.txt` con todas las dependencias
-- ✅ `railway.json` (opcional, pero recomendado)
+- ✅ `requirements.txt` en la carpeta `backend/`
+- ✅ `railway.json` en la raíz del proyecto (ya creado)
 - ✅ `.gitignore` configurado correctamente
+
+**Nota:** El `railway.json` en la raíz del proyecto le dice a Railway que use el Dockerfile del backend.
 
 ---
 
@@ -35,9 +37,11 @@ Asegúrate de que tu repositorio tenga:
 ### Opción A: Desde GitHub (Recomendado)
 
 1. Conecta tu repositorio de GitHub
-2. Railway detectará automáticamente el `Dockerfile` en `backend/`
-3. Selecciona la carpeta `backend/` como **Root Directory**
-4. Railway comenzará a construir la imagen automáticamente
+2. Railway puede intentar usar Railpack automáticamente y fallar (esto es normal)
+3. **SOLUCIÓN:** Ve a la pestaña **Settings** de tu servicio
+4. En **Root Directory**, configura: `backend`
+5. En **Build Command**, déjalo vacío (Railway usará el Dockerfile)
+6. Railway detectará el `Dockerfile` en `backend/` y comenzará a construir
 
 ### Opción B: Desde Código Local
 
