@@ -190,11 +190,13 @@ SIMPLE_JWT = {
 # CORS Configuration
 # https://pypi.org/project/django-cors-headers/
 
+# CORS_ALLOWED_ORIGINS desde variable de entorno o valores por defecto
+CORS_ALLOWED_ORIGINS_STR = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000'
+)
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Vite default port
-    'http://localhost:3000',  # React default port
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:3000',
+    origin.strip() for origin in CORS_ALLOWED_ORIGINS_STR.split(',')
 ]
 
 # Permite el envío de cookies y credenciales
