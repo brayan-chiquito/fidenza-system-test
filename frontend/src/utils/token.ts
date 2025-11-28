@@ -1,5 +1,18 @@
 /**
  * Utilidades para manejo de tokens JWT en localStorage
+ * 
+ * NOTA DE SEGURIDAD:
+ * - localStorage es vulnerable a ataques XSS (Cross-Site Scripting)
+ * - Para esta prueba técnica es aceptable, pero en producción se recomienda:
+ *   1. httpOnly Cookies: Protección contra XSS, requiere cambios en backend
+ *   2. sessionStorage: Se limpia al cerrar pestaña (mejor que localStorage)
+ *   3. Memory storage: Máxima seguridad pero se pierde al recargar
+ * 
+ * Mitigaciones actuales:
+ * - Tokens con expiración corta (access: 24h, refresh: 7 días)
+ * - Rotación de refresh tokens habilitada
+ * - CORS configurado correctamente
+ * - Content Security Policy recomendado para producción
  */
 
 import type { User } from '@/types/auth'
