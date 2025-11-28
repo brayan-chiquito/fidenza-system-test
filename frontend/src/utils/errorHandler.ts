@@ -78,7 +78,21 @@ export function getErrorMessage(error: unknown): string {
     }
 
     if (message.includes('Network Error') || message.includes('timeout')) {
-      return 'Error de conexión. Por favor, verifica tu conexión a internet.'
+      // Log detallado siempre para debug
+      console.error('🔴 Network Error detallado:', {
+        message: error.message,
+        apiBaseURL: import.meta.env.VITE_API_BASE_URL || 'NO CONFIGURADA',
+        environment: import.meta.env.MODE,
+      })
+      if (import.meta.env.DEV) {
+        console.error('Stack:', error.stack)
+      }
+      return 'Error de conexión. Por favor, verifica tu conexión a internet y que el backend esté disponible.'
+    }
+    
+    // Detectar errores de CORS más específicamente
+    if (message.includes('CORS') || message.includes('Access-Control')) {
+      return 'Error de configuración CORS. Por favor, contacta al administrador.'
     }
 
     // Si es un mensaje genérico de error, usar un mensaje por defecto
