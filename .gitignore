@@ -20,6 +20,21 @@ __pycache__/
 
 # Base de datos local (SQLite por defecto de Django)
 db.sqlite3
+backend/db.sqlite3
+
+# Archivos estáticos recopilados (se generan con collectstatic)
+backend/staticfiles/
+staticfiles/
+
+# Archivos de media (uploads de usuarios)
+backend/media/
+media/
+
+# Cobertura de tests
+backend/.coverage
+backend/htmlcov/
+.coverage
+htmlcov/
 
 # Variables de entorno y secretos del Backend
 backend/.env
@@ -39,3 +54,5 @@ frontend/dist/
 # Variables de entorno y secretos del Frontend
 frontend/.env
 frontend/.env.local
+frontend/.env.example
+taskflow/

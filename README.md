@@ -1,1 +1,0 @@
-# fidenza-system-test
