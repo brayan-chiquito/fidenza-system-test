@@ -1,0 +1,58 @@
+###############################
+# Archivos del Sistema y IDEs #
+###############################
+.DS_Store
+.vscode/
+# Archivos de log
+*.log
+
+########################################
+# Configuración del BACKEND (Django/DRF)#
+########################################
+
+# Ignorar el entorno virtual de Python
+backend/venv/
+
+# Archivos compilados y de caché de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de datos local (SQLite por defecto de Django)
+db.sqlite3
+backend/db.sqlite3
+
+# Archivos estáticos recopilados (se generan con collectstatic)
+backend/staticfiles/
+staticfiles/
+
+# Archivos de media (uploads de usuarios)
+backend/media/
+media/
+
+# Cobertura de tests
+backend/.coverage
+backend/htmlcov/
+.coverage
+htmlcov/
+
+# Variables de entorno y secretos del Backend
+backend/.env
+backend/.env.local
+
+
+#######################################
+# Configuración del FRONTEND (Vue/Vite)#
+#######################################
+
+# Dependencias de Node
+frontend/node_modules/
+
+# Directorio de build generado por Vite
+frontend/dist/
+
+# Variables de entorno y secretos del Frontend
+frontend/.env
+frontend/.env.local
+frontend/.env.example
+taskflow/
